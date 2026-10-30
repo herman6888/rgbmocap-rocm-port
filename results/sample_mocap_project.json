@@ -1,0 +1,28 @@
+{
+  "workspace_version": 2,
+  "name": "sample_mocap_a37caf55ebf8f8_project",
+  "source": {
+    "path": "C:\\Users\\Herman\\.hermes\\cache\\scratch\\sample_mocap.mp4",
+    "width": 2560,
+    "height": 1440,
+    "fps": 59.9972724177537,
+    "duration": 34.951589,
+    "frames": 2097,
+    "codec": "h264",
+    "bytes": 175013687
+  },
+  "media": null,
+  "time_offset": 0.0,
+  "active_model": "exmr",
+  "models": {
+    "gvhmr": {
+      "active": "gvhmr"
+    },
+    "exmr": {
+      "active": "exmr"
+    }
+  },
+  "view": {},
+  "origins": [],
+  "reference": "exmr"
+}

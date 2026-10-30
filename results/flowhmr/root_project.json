@@ -1,0 +1,39 @@
+{
+ "workspace_version": 2,
+ "name": "flow_input_0532c6df758b6d_project",
+ "source": {
+  "path": "G:\\research\\flow_input.mp4",
+  "width": 2560,
+  "height": 1440,
+  "fps": 30.0,
+  "duration": 4.0,
+  "frames": 120,
+  "codec": "h264",
+  "bytes": 6268832
+ },
+ "media": null,
+ "time_offset": 0.0,
+ "active_model": "flowhmr",
+ "models": {
+  "flowhmr": {
+   "active": "flowhmr"
+  }
+ },
+ "view": {},
+ "origins": [],
+ "reference": "flowhmr",
+ "stages": {
+  "flow_camera": {
+   "status": "failed",
+   "error": "[WinError 2] \u7cfb\u7edf\u627e\u4e0d\u5230\u6307\u5b9a\u7684\u6587\u4ef6\u3002: 'G:\\\\research\\\\toyxyz_RGBMocap\\\\projects\\\\flow_input_0532c6df758b6d_project\\\\input.mp4'"
+  }
+ },
+ "pipeline": {
+  "model": "flowhmr",
+  "result": "initial"
+ },
+ "flow_options": {
+  "camera_interval": -1,
+  "fast_sam": true
+ }
+}
