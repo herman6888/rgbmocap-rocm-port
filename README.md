@@ -27,7 +27,47 @@ patches/
   git-runtime-state.json.bak-cu128  # 上游原版状态备份
 results/
   gvhmr/  exmr/  flowhmr/       # 三条路线的 FBX + project.json
+skill/
+  port-nvidia-app-to-rocm/      # 通用移植方法论 skill（SKILL.md + templates/sitecustomize.py）
+  rgbmocap-rocm-port/           # 本 app 专属操作 skill（SKILL.md + templates/sitecustomize.py）
 ```
+
+## Agent 如何用本仓库的 Skill
+
+skill 是给 AI agent 读的**过程性知识文件**（`SKILL.md`，[Agent Skills 约定](https://agentskills.io)）。任何 agent 拿到本仓库即可获得完整移植能力：
+
+| Agent 类型 | 调用方式 |
+|---|---|
+| **Hermes Agent** | 把 `skill/port-nvidia-app-to-rocm/` 整个文件夹拷入 `~/.hermes/skills/`（Windows: `C:\Users\<user>\.hermes\skills\`），skill 自动进索引；对话中说 "load skill port-nvidia-app-to-rocm" 或 agent 遇到 "port CUDA app to ROCm" 类任务时自动加载。app 级细节装 `skill/rgbmocap-rocm-port/`。 |
+| **Claude Code / Codex / pi 等** | 把 `skill/port-nvidia-app-to-rocm/SKILL.md` 的 URL 或文件路径贴进提示词，例：*"Read https://github.com/herman6888/rgbmocap-rocm-port/blob/main/skill/port-nvidia-app-to-rocm/SKILL.md and follow it to port <app> to ROCm"*；或挂进各自的技能体系（CLAUDE.md / AGENTS.md 中 `@` 引用该文件）。 |
+| **任意 agent 取单文件** | 模板直接取：`skill/port-nvidia-app-to-rocm/templates/sitecustomize.py`（与 `patches/sitecustomize.py` 同源）。 |
+
+**给 agent 的最小指令模板**：
+> 把 `<app>` 移植到 AMD ROCm。方法论：`skill/port-nvidia-app-to-rocm/SKILL.md`（11 步流程，含全部已知坑与验证方法）。参考实现：本仓库 `patches/`（照抄的双闸门补丁对）+ `results/`（验证过的产物）。
+
+## Model weights 下载链接（本机全部验证过）
+
+通用规则：app 的 `mocap/models.py` manifest 给出每个权重的**精确相对路径 + sha256**（路径必须逐字符一致）。URL 模式：
+- HuggingFace：`https://huggingface.co/<org>/<repo>/resolve/main/<path>`（gated 仓库无 token 返回 401；可用镜像 `https://hf-mirror.com/<org>/<repo>/resolve/main/<path>`）
+- ModelScope：`https://modelscope.cn/api/v1/models/<org>/<repo>/repo?Revision=master&FilePath=<path>`（匿名、无需 token、国内快）
+- GitHub release：`https://github.com/<org>/<repo>/releases/download/<tag>/<file>`
+- Google Drive（manifest 给 drive_id 时）：`https://drive.usercontent.google.com/download?id=<drive_id>&confirm=t`
+
+| 权重 | 实际下载来源 | 验证 |
+|---|---|---|
+| `yolo/yolov8x.pt` | <https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8x.pt> | 官方 v8.3.0 资产实际 sha `ad8f7f83…`（manifest 记 `c4d5a3f0…`，以官方资产为准） |
+| `body_models/smplh/neutral/model.npz` | <https://huggingface.co/lithiumice/models_hub/resolve/main/4_SMPLhub/smplh/neutral/model.npz> | sha `a60a7e29…` 逐字节 = manifest |
+| `flowhmr/sam/model.ckpt` | <https://modelscope.cn/api/v1/models/facebook/sam-3d-body-dinov3/repo?Revision=master&FilePath=model.ckpt> | sha `b5a2f9d3…` = manifest |
+| `flowhmr/sam/model_config.yaml` | 同上仓库 `FilePath=model_config.yaml` | sha `1012fc3f…` = manifest |
+| `flowhmr/sam/assets/mhr_model.pt` | 同上仓库 `FilePath=assets/mhr_model.pt` | sha `352e271a…` = manifest |
+| `flowhmr/vggt_omega_1b_512.pt` | <https://modelscope.cn/api/v1/models/facebook/VGGT-Omega/repo?Revision=master&FilePath=vggt_omega_1b_512.pt> | sha `c02da418…` 逐字节 = manifest |
+| `hmr2/epoch=10-step=25000.ckpt` | <https://huggingface.co/camenduru/GVHMR/resolve/main/hmr2/epoch%3D10-step%3D25000.ckpt> | sha `2dcf7963…` 逐字节 = manifest |
+| `vitpose/vitpose-h-multi-coco.pth` | <https://huggingface.co/camenduru/GVHMR/resolve/main/vitpose/vitpose-h-multi-coco.pth> | sha `50e33f40…` 逐字节 = manifest |
+| `gvhmr/gvhmr_siga24_release.ckpt` | <https://huggingface.co/camenduru/GVHMR/resolve/main/gvhmr/gvhmr_siga24_release.ckpt> | sha `4fae7da2…` |
+| `exmr/exmr.safetensors` | <https://huggingface.co/twehrbein/ExMR/resolve/main/exmr.safetensors> | sha `8d394731…` |
+| `exmr/sapiens2_1b_pose.safetensors` | <https://huggingface.co/facebook/sapiens2-pose-1b/resolve/main/sapiens2_1b_pose.safetensors> | sha `2dab7014…` |
+
+其余权重（pva/footmr/handflow 系/mano/smpl/smplx/reid/flowhmr ckpt）按 manifest 的 `url` + `drive_id` 字段套用上面的 URL 模式即可。所有下载后必须 sha256 校验；`models/**.receipt.json` sidecar 制度见 skill。
 
 ## 移植要点（可复现步骤）
 
@@ -54,7 +94,7 @@ results/
 - flow_features 依赖标准管线的 `tracking.npz`：需先跑 `people → person → track`（需要 `models/yolo/yolov8x.pt`；上游期望 sha `c4d5a3f0…`，ultralytics v8.3.0 官方资产实际 hash `ad8f7f83…`，以 GitHub 官方资产为准）
 
 ### 6. 权重来源
-`mocap/models.py` 是唯一真源（相对路径 + 期望 sha256，路径必须逐字符一致，如 `body_models/smplh/neutral/model.npz`）。经验：**ModelScope 优先**（facebook/HF 系大多有镜像，匿名直连），HF 直连次之（gated 仓库 401），ABDM 下载器 hash 损坏率高。全部权重以 `.receipt.json` sidecar 记档。
+`mocap/models.py` 是唯一真源（相对路径 + 期望 sha256，路径必须逐字符一致，如 `body_models/smplh/neutral/model.npz`）。全部验证过的下载链接见上文「Model weights 下载链接」章节；其余权重按 manifest 的 `url`/`drive_id` 套 URL 模式，任意下载器（curl/wget 等）均可，下载后必须 sha256 校验并以 `.receipt.json` sidecar 记档。
 
 ### 7. 升级注意事项
 `update.cmd` 会重写 registry + state → **本仓库的 patches/ 需重新盖回**（这正是把这一对文件版本化的原因）。上游代码本体（含 fbx_writer 原生实现）未被修改。
